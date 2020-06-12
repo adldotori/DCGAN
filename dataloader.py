@@ -7,26 +7,28 @@ import torch.optim as optim
 import torch.utils.data as data
 from torchvision import datasets, transforms
 
-class MNISTDataset(data.Dataset):
-    def __init__(self, mode):
-        super(MNISTDataset, self).__init__()
-        if mode == 'train':
-            self.dataset = datasets.MNIST('.', train=True, download=True,
+class Dataset(data.Dataset):
+    def __init__(self, name):
+        super(Dataset, self).__init__()
+
+        if name == 'mnist':
+            self.dataset = datasets.MNIST('data/MNIST/', train=True, download=True,
                         transform=transforms.Compose([
                             transforms.Resize(64),
                             transforms.ToTensor(),
                             transforms.Normalize(mean=(0.5,), std=(0.5,))
                         ]))
         else:
-            self.dataset = datasets.MNIST('.', train=False, download=True,
+            self.dataset = datasets.CelebA('data/CelebA/', download=True,
                         transform=transforms.Compose([
                             transforms.Resize(64),
+                            transforms.CenterCrop(64),
                             transforms.ToTensor(),
                             transforms.Normalize(mean=(0.5,), std=(0.5,))
-                        ])) 
+                        ]))
 
     def name(self):
-        return "MNISTDataset"
+        return "Dataset"
 
     def __getitem__(self, index):
         return self.dataset[index]
@@ -34,9 +36,9 @@ class MNISTDataset(data.Dataset):
     def __len__(self):
         return len(self.dataset)
 
-class MNISTDataloader(object):
-    def __init__(self, mode, opt, dataset):
-        super(MNISTDataloader, self).__init__()
+class Dataloader(object):
+    def __init__(self, opt, dataset):
+        super(Dataloader, self).__init__()
         use_cuda = not torch.cuda.is_available()
         kwargs = {'num_workers': opt.num_workers} if use_cuda else {}
 
@@ -62,22 +64,11 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--epoch', type=int, default=40)
     parser.add_argument('-b', '--batch-size', type=int, default = 100)
     parser.add_argument('-d', '--display-step', type=int, default = 600)
+    parser.add_argument('--dataset', type=str, default = 'mnist', help='mnist or celeba')
     opt = parser.parse_args()
 
-    train_dataset = MNISTDataset('train')
-    train_data_loader = MNISTDataloader('train', opt, train_dataset)
+    dataset = Dataset(opt.dataset)
+    data_loader = Dataloader(opt, dataset)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--num-workers', type=int, default = 4)
-    parser.add_argument('-e', '--epoch', type=int, default=1)
-    parser.add_argument('-b', '--batch-size', type=int, default = 1)
-    parser.add_argument('-d', '--display-step', type=int, default = 600)
-    opt = parser.parse_args()
-
-    test_dataset = MNISTDataset('test')
-    test_data_loader = MNISTDataloader('test', opt, test_dataset)
-
-    print('[+] Size of the train dataset: %05d, train dataloader: %03d' \
-        % (len(train_dataset), len(train_data_loader.data_loader)))   
-    print('[+] Size of the test dataset: %05d, test dataloader: %03d' \
-        % (len(test_dataset), len(test_data_loader.data_loader)))
+    print('[+] Size of the dataset: %05d, dataloader: %03d' \
+        % (len(dataset), len(data_loader.data_loader))) 

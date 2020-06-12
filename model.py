@@ -12,7 +12,7 @@ def _weights_init(m):
         nn.init.constant_(m.bias.data, 0)
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, dataset):
         super().__init__()
     
         self.model = nn.Sequential(
@@ -28,7 +28,7 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=False),
             nn.BatchNorm2d(128),
             nn.ReLU(),             
-            nn.ConvTranspose2d(128, 1, 4, 2, 1),
+            nn.ConvTranspose2d(128, 1 if dataset=='mnist' else 3, 4, 2, 1),
             nn.Tanh()
         ) 
         self.apply(_weights_init)
@@ -39,11 +39,11 @@ class Generator(nn.Module):
         return ret.view(z.size(0), -1, 64, 64)
          
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, dataset):
         super().__init__()
 
         self.model = nn.Sequential(
-            nn.Conv2d(1, 128, 4, 2, 1, bias=False),
+            nn.Conv2d(1 if dataset=='mnist' else 3, 128, 4, 2, 1, bias=False),
             nn.LeakyReLU(0.2),
             nn.Conv2d(128, 256, 4, 2, 1, bias=False),
             nn.BatchNorm2d(256),
@@ -60,7 +60,7 @@ class Discriminator(nn.Module):
         self.apply(_weights_init)
 
     def forward(self, x):
-        x = x.view(x.size(0), 1, 64, 64)
+        x = x.view(x.size(0), -1, 64, 64)
         ret = self.model(x)
         ret = ret.view(ret.size(0), 1)
         return ret

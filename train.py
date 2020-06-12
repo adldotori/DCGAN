@@ -16,23 +16,21 @@ def get_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--num-workers', type=int, default = 4)
     parser.add_argument('-e', '--epoch', type=int, default=20)
-    parser.add_argument('-b', '--batch-size', type=int, default = 100)
-    parser.add_argument('-d', '--display-step', type=int, default = 600)
+    parser.add_argument('-b', '--batch-size', type=int, default = 256)
+    parser.add_argument('-d', '--display-step', type=int, default = 500)
+    parser.add_argument('--dataset', type=str, default = 'mnist', help='mnist or celeba')
     opt = parser.parse_args()
     return opt
 
 def train(opt):
     # Init Model
-    generator = Generator().cuda()
-    discriminator = Discriminator().cuda()
+    generator = Generator(opt.dataset).cuda()
+    discriminator = Discriminator(opt.dataset).cuda()
     discriminator.train()
 
     # Load Dataset
-    train_dataset = MNISTDataset('train')
-    train_data_loader = MNISTDataloader('train', opt, train_dataset)
-
-    # test_dataset = MNISTDataset('test')
-    # test_data_loader = MNISTDataloader('test', opt, test_dataset)
+    dataset = Dataset(opt.dataset)
+    data_loader = Dataloader(opt, dataset)
 
     # Set Optimizer
     optim_gen = torch.optim.Adam(generator.parameters(), lr=0.0002)
@@ -44,23 +42,24 @@ def train(opt):
     writer = SummaryWriter()
 
     for epoch in range(opt.epoch):
-        for i in range(len(train_data_loader.data_loader)):
-            step = epoch * len(train_data_loader.data_loader) + i + 1
+        for i in range(len(data_loader.data_loader)):
+            step = epoch * len(data_loader.data_loader) + i + 1
             # load dataset only batch_size
-            image, label = train_data_loader.next_batch()
+            image, label = data_loader.next_batch()
             image = image.cuda()
+            batch_size = image.shape[0]
 
             # train discriminator
             optim_dis.zero_grad()
 
-            noise = Variable(torch.randn(opt.batch_size, 100)).cuda()
+            noise = Variable(torch.randn(batch_size, 100)).cuda()
             gen = generator(noise)
 
             validity_real = discriminator(image)
-            loss_dis_real = loss(validity_real, Variable(torch.ones(opt.batch_size,1)).cuda())
+            loss_dis_real = loss(validity_real, Variable(torch.ones(batch_size,1)).cuda())
 
             validity_fake = discriminator(gen.detach())
-            loss_dis_fake = loss(validity_fake, Variable(torch.zeros(opt.batch_size,1)).cuda())
+            loss_dis_fake = loss(validity_fake, Variable(torch.zeros(batch_size,1)).cuda())
 
             loss_dis = (loss_dis_real + loss_dis_fake) / 2
             loss_dis.backward()
@@ -70,12 +69,12 @@ def train(opt):
             generator.train()
             optim_gen.zero_grad()
 
-            noise = Variable(torch.randn(opt.batch_size, 100)).cuda()
+            noise = Variable(torch.randn(batch_size, 100)).cuda()
             
             gen = generator(noise)
             validity = discriminator(gen)
             
-            loss_gen = loss(validity, Variable(torch.ones(opt.batch_size,1)).cuda())
+            loss_gen = loss(validity, Variable(torch.ones(batch_size,1)).cuda())
             loss_gen.backward()
             optim_gen.step()
 
