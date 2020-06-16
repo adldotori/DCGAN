@@ -4,8 +4,16 @@
 
 **Pytorch implementation of Deep Convolutional Generative Adversarial Networks**
 
-## Result
-![image](result.gif)
+## MNIST
+### Result
+![image](result/result_mnist.gif)
 
 ### Epoch 20
-![image](result.png)
+![image](result/result_mnist.png)
+
+## FACE
+### Result
+![image](result/result.gif)
+
+### Epoch 170
+![image](result/result.png)

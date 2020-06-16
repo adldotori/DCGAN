@@ -8,7 +8,7 @@ import torch.utils.data as data
 from torchvision import datasets, transforms
 
 class Dataset(data.Dataset):
-    def __init__(self, name):
+    def __init__(self, name, mode=None):
         super(Dataset, self).__init__()
 
         if name == 'mnist':
@@ -18,13 +18,22 @@ class Dataset(data.Dataset):
                             transforms.ToTensor(),
                             transforms.Normalize(mean=(0.5,), std=(0.5,))
                         ]))
+        elif mode == 'colab':
+            self.dataset = datasets.ImageFolder('/content/gdrive/My Drive/celeba/', download=True,
+                        transform=transforms.Compose([
+                            transforms.Resize(64),
+                            transforms.CenterCrop(64),
+                            transforms.ToTensor(),
+                            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+                        ]))
+
         else:
             self.dataset = datasets.CelebA('data/CelebA/', download=True,
                         transform=transforms.Compose([
                             transforms.Resize(64),
                             transforms.CenterCrop(64),
                             transforms.ToTensor(),
-                            transforms.Normalize(mean=(0.5,), std=(0.5,))
+                            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
                         ]))
 
     def name(self):

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+import os.path as osp
 import argparse
 import numpy as np
 
@@ -19,6 +20,7 @@ def get_opt():
     parser.add_argument('-b', '--batch-size', type=int, default = 256)
     parser.add_argument('-d', '--display-step', type=int, default = 500)
     parser.add_argument('--dataset', type=str, default = 'mnist', help='mnist or celeba')
+    parser.add_argument('-m', '--mode', type=str, default = 'local', help='local or colab')
     opt = parser.parse_args()
     return opt
 
@@ -40,6 +42,13 @@ def train(opt):
     loss = Loss()
 
     writer = SummaryWriter()
+
+    if opt.mode == 'local':
+        save_dir = 'checkpoints'
+    elif opt.mode == 'colab':
+        save_dir = '/content/gdrive/My Drive/checkpoints/'
+    if not osp.isdir(save_dir):
+        os.makedirs(save_dir)
 
     for epoch in range(opt.epoch):
         for i in range(len(data_loader.data_loader)):
@@ -95,7 +104,7 @@ def train(opt):
                 grid = make_grid(sample_images, nrow=3, normalize=True)
                 writer.add_image('sample_image', grid, step)
 
-                torch.save(generator.state_dict(), 'checkpoint_{}.pt'.format(step))
+                torch.save(generator.state_dict(), osp.join(save_dir, 'checkpoint_{}.pt'.format(step)))
 
 if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
